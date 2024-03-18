@@ -1,9 +1,14 @@
 # ᴅæᴍᴏɴɪᴄ ᴋᴇʏᴍᴀᴘ ʙʏ [𝐜𝐫𝐦𝐬𝐧_](https://github.com/phntsm "(github:phntsm)")
-###### *mk I*
+###### *mk III*
 Based on Preonic Vial map with minor personal adjustments.
+
+&ensp;⛧ _**MODIFICATIONS TO KEYMAP**_
+>&ensp;🜏 integrated encoder.\
+>&ensp;🜏 added 2u/3u bottom row layout.
 
 &ensp;⛧ _**MODIFICATIONS TO RULES**_
 >&ensp;🜏 vial security lock disabled.\
+>&ensp;🜏 encoder support.\
 >&ensp;🜏 tap dance, combo, and unicode.\
 >&ensp;🜏 ~~console and command.~~
 
