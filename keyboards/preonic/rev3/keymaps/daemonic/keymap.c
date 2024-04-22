@@ -15,8 +15,20 @@
  */
 
 #include QMK_KEYBOARD_H
-#include "muse.h"
 
+/// S U P E R M E G A   A L T + T A B
+bool is_alt_tab_active = false;
+uint16_t alt_tab_timer = 0;
+
+/// S U P E R M E G A   A L T + T A B // timer
+void matrix_scan_user(void) {
+    if (is_alt_tab_active) {
+        if (timer_elapsed(alt_tab_timer) > 666) {
+            unregister_code(KC_LALT);
+            is_alt_tab_active = false;
+        }
+    }
+}
 
 /// L A Y E R S
 enum preonic_layers {
@@ -238,168 +250,26 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 };
 
-/// L A Y O U T J U N K
-///bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-///  switch (keycode) {
-///        case QWERTY:
-///          if (record->event.pressed) {
-///            set_single_persistent_default_layer(_QWERTY);
-///          }
-///          return false;
-///          break;
-///        case COLEMAK:
-///          if (record->event.pressed) {
-///            set_single_persistent_default_layer(_COLEMAK);
-///          }
-///          return false;
-///          break;
-///        case DVORAK:
-///          if (record->event.pressed) {
-///            set_single_persistent_default_layer(_DVORAK);
-///          }
-///          return false;
-///          break;
-///        case LOWER:
-///          if (record->event.pressed) {
-///            layer_on(_LOWER);
-///            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-///          } else {
-///            layer_off(_LOWER);
-///            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-///          }
-///          return false;
-///          break;
-///        case RAISE:
-///          if (record->event.pressed) {
-///            layer_on(_RAISE);
-///            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-///          } else {
-///            layer_off(_RAISE);
-///            update_tri_layer(_LOWER, _RAISE, _ADJUST);
-///          }
-///          return false;
-///          break;
-///        case BACKLIT:
-///          if (record->event.pressed) {
-///            register_code(KC_RSFT);
-///            #ifdef BACKLIGHT_ENABLE
-///              backlight_step();
-///            #endif
-///            #ifdef RGBLIGHT_ENABLE
-///              rgblight_step();
-///            #endif
-///            #ifdef __AVR__
-///            writePinLow(E6);
-///            #endif
-///          } else {
-///            unregister_code(KC_RSFT);
-///            #ifdef __AVR__
-///            writePinHigh(E6);
-///            #endif
-///          }
-///          return false;
-///          break;
-///      }
-///    return true;
-///};
-
 /// E N C O D E R
-#if defined(ENCODER_MAP_ENABLE)
-const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
-    [_BASE] =   { ENCODER_CCW_CW(KC_VOLU, KC_VOLD) },
-    [_LOWER] =   { ENCODER_CCW_CW(_______, _______) },
-    [_RAISE] =   { ENCODER_CCW_CW(_______, _______) },
-    [_FN] =   { ENCODER_CCW_CW(_______, _______) },
-    [_GAME] =   { ENCODER_CCW_CW(_______, _______) },
-    [_I] =   { ENCODER_CCW_CW(_______, _______) },
-    [_II] =   { ENCODER_CCW_CW(_______, _______) },
-    [_III] =   { ENCODER_CCW_CW(_______, _______) },
-    [_CFG] =   { ENCODER_CCW_CW(_______, _______) },
-
-};
-#endif
-
-/// A U D I O
-bool muse_mode = false;
-uint8_t last_muse_note = 0;
-uint16_t muse_counter = 0;
-uint8_t muse_offset = 70;
-uint16_t muse_tempo = 50;
-
 bool encoder_update_user(uint8_t index, bool clockwise) {
-  if (muse_mode) {
-    if (IS_LAYER_ON(_CFG)) {
-      if (clockwise) {
-        muse_offset++;
-      } else {
-        muse_offset--;
-      }
-    } else {
-      if (clockwise) {
-        muse_tempo+=1;
-      } else {
-        muse_tempo-=1;
-      }
-    }
-  } else {
-    if (clockwise) {
-      register_code(KC_PGDN);
-      unregister_code(KC_PGDN);
-    } else {
-      register_code(KC_PGUP);
-      unregister_code(KC_PGUP);
-    }
-  }
-    return true;
-}
+    if (get_highest_layer(layer_state|default_layer_state) == 0) {
 
-bool dip_switch_update_user(uint8_t index, bool active) {
-    switch (index) {
-        case 0:
-            if (active) {
-                layer_on(_CFG);
+            if (clockwise) {
+                tap_code(KC_VOLU);
             } else {
-                layer_off(_CFG);
+                tap_code(KC_VOLD);
             }
-            break;
-        case 1:
-            if (active) {
-                muse_mode = true;
+    } else if (get_highest_layer(layer_state|default_layer_state) == 1) {  /* Layer 1 */
+            register_code(KC_LALT);
+            is_alt_tab_active = true;
+            if (clockwise) {
+                tap_code(KC_TAB);
             } else {
-                muse_mode = false;
+                register_code(KC_LSFT);
+                tap_code(KC_TAB);
+                unregister_code(KC_LSFT);
             }
+            alt_tab_timer = timer_read();
     }
-    return true;
-}
-
-
-void matrix_scan_user(void) {
-#ifdef AUDIO_ENABLE
-    if (muse_mode) {
-        if (muse_counter == 0) {
-            uint8_t muse_note = muse_offset + SCALE[muse_clock_pulse()];
-            if (muse_note != last_muse_note) {
-                stop_note(compute_freq_for_midi_note(last_muse_note));
-                play_note(compute_freq_for_midi_note(muse_note), 0xF);
-                last_muse_note = muse_note;
-            }
-        }
-        muse_counter = (muse_counter + 1) % muse_tempo;
-    } else {
-        if (muse_counter) {
-            stop_all_notes();
-            muse_counter = 0;
-        }
-    }
-#endif
-}
-
-bool music_mask_user(uint16_t keycode) {
-  switch (keycode) {
-    case RAISE:
-    case LOWER:
-      return false;
-    default:
-      return true;
-  }
-}
+    return false;
+};
