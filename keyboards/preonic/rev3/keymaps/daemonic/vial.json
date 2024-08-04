@@ -2,6 +2,16 @@
   "name": "OLKB DÆMONIC",
   "vendorId": "0x03A8",
   "productId": "0xA649",
+  "customKeycodes": [
+    {   "name": "Alt-Tab Left",
+        "title": "AT_L",
+        "shortName": "AT_L"
+    },
+    {   "name": "Alt-Tab Right",
+        "title": "AT_R",
+        "shortName": "AT_R"
+    }
+],
   "matrix": {"rows": 10, "cols": 6},
   "lighting": "qmk_rgblight",
   "layouts": {

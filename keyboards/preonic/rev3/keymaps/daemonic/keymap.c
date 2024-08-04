@@ -18,17 +18,12 @@
 
 /// S U P E R M E G A   A L T + T A B
 bool is_alt_tab_active = false;
-uint16_t alt_tab_timer = 0;
 
-/// S U P E R M E G A   A L T + T A B // timer
-void matrix_scan_user(void) {
-    if (is_alt_tab_active) {
-        if (timer_elapsed(alt_tab_timer) > 666) {
-            unregister_code(KC_LALT);
-            is_alt_tab_active = false;
-        }
-    }
-}
+enum custom_keycodes {
+  AT_L = QK_KB_0,
+  AT_R,
+
+};
 
 /// L A Y E R S
 enum preonic_layers {
@@ -250,26 +245,61 @@ const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
 };
 
-/// E N C O D E R
-bool encoder_update_user(uint8_t index, bool clockwise) {
-    if (get_highest_layer(layer_state|default_layer_state) == 0) {
+#if defined(ENCODER_MAP_ENABLE)
+const uint16_t PROGMEM encoder_map[][NUM_ENCODERS][2] = {
+    [_BASE] =   { ENCODER_CCW_CW(KC_VOLU, KC_VOLD) },
+    [_LOWER] =   { ENCODER_CCW_CW(_______, _______) },
+    [_RAISE] =   { ENCODER_CCW_CW(_______, _______) },
+    [_FN] =   { ENCODER_CCW_CW(_______, _______) },
+    [_GAME] =   { ENCODER_CCW_CW(_______, _______) },
+    [_I] =   { ENCODER_CCW_CW(_______, _______) },
+    [_II] =   { ENCODER_CCW_CW(_______, _______) },
+    [_III] =   { ENCODER_CCW_CW(_______, _______) },
+    [_CFG] =   { ENCODER_CCW_CW(_______, _______) },
 
-            if (clockwise) {
-                tap_code(KC_VOLU);
-            } else {
-                tap_code(KC_VOLD);
-            }
-    } else if (get_highest_layer(layer_state|default_layer_state) == 1) {  /* Layer 1 */
-            register_code(KC_LALT);
-            is_alt_tab_active = true;
-            if (clockwise) {
-                tap_code(KC_TAB);
-            } else {
-                register_code(KC_LSFT);
-                tap_code(KC_TAB);
-                unregister_code(KC_LSFT);
-            }
-            alt_tab_timer = timer_read();
-    }
-    return false;
 };
+#endif
+
+/// key processing
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch (keycode) {               // This will do most of the grunt work with the keycodes.
+    case AT_R:
+      if (record->event.pressed) {
+        if (!is_alt_tab_active) {
+          is_alt_tab_active = true;
+          register_code(KC_LALT);
+        }
+        register_code(KC_TAB);
+      } else {
+        unregister_code(KC_TAB);
+      }
+      break;
+      case AT_L:
+        if (record->event.pressed) {
+          if (!is_alt_tab_active) {
+            is_alt_tab_active = true;
+            register_code(KC_LALT);
+          }
+          register_code(KC_LSFT);
+          register_code(KC_TAB);
+        } else {
+          unregister_code(KC_TAB);
+          unregister_code(KC_LSFT);
+        }
+        break;
+  }
+  return true;
+}
+
+void matrix_scan_user(void) {
+    switch (get_highest_layer(layer_state)) {
+        case 0:
+            if (is_alt_tab_active) {
+                unregister_code(KC_LALT);
+                is_alt_tab_active = false;
+            }
+            break;
+        default:
+            break;
+    }
+}
